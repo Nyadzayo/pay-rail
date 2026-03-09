@@ -1,0 +1,429 @@
+metadata:
+  name: startbutton
+  display_name: Startbutton
+  version: 1.0.0
+  base_url: https://api.startbutton.co/v1
+  sandbox_url: https://sandbox.startbutton.co/v1
+  documentation_url: https://docs.startbutton.co
+
+endpoints:
+  - value:
+      url: /payments
+      method: POST
+      parameters:
+        - amount
+        - currency
+        - merchant_reference
+        - payment_method
+        - return_url
+      response_schema: '{"id": "string", "status": "string", "amount": "integer", "currency": "string", "created_at": "string"}'
+      description: Create a new payment transaction
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      url: /payments/{id}
+      method: GET
+      parameters:
+        - id
+      response_schema: '{"id": "string", "status": "string", "amount": "integer", "currency": "string", "events": "array"}'
+      description: Retrieve payment details by ID
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      url: /payments/{id}/capture
+      method: POST
+      parameters:
+        - id
+        - amount
+      response_schema: '{"id": "string", "status": "string", "captured_amount": "integer"}'
+      description: Capture a previously authorized payment
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      url: /payments/{id}/refund
+      method: POST
+      parameters:
+        - id
+        - amount
+        - reason
+      response_schema: '{"id": "string", "refund_id": "string", "status": "string", "amount": "integer"}'
+      description: Refund a captured payment (full or partial)
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      url: /payments/{id}/void
+      method: POST
+      parameters:
+        - id
+      response_schema: '{"id": "string", "status": "string"}'
+      description: Void an authorized payment before capture
+    confidence_score: 0.85
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      url: /payments/{id}/3ds
+      method: POST
+      parameters:
+        - id
+        - browser_info
+      response_schema: '{"redirect_url": "string", "session_id": "string"}'
+      description: Initiate 3D Secure authentication flow
+    confidence_score: 0.78
+    source: community_report
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.10
+
+  - value:
+      url: /webhooks
+      method: POST
+      parameters:
+        - url
+        - events
+      response_schema: '{"id": "string", "url": "string", "events": "array", "active": "boolean"}'
+      description: Register a webhook endpoint for event notifications
+    confidence_score: 0.85
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+webhooks:
+  - value:
+      event_name: payment.authorized
+      payload_schema: '{"event": "string", "data": {"id": "string", "status": "authorized", "amount": "integer", "currency": "string"}}'
+      trigger_conditions: When a payment is successfully authorized
+      description: Fired when payment authorization succeeds
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: payment.captured
+      payload_schema: '{"event": "string", "data": {"id": "string", "status": "captured", "amount": "integer", "captured_amount": "integer"}}'
+      trigger_conditions: When a payment capture is completed
+      description: Fired when payment is successfully captured
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: payment.refunded
+      payload_schema: '{"event": "string", "data": {"id": "string", "status": "refunded", "refund_id": "string", "amount": "integer"}}'
+      trigger_conditions: When a refund is processed
+      description: Fired when payment refund completes
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: payment.voided
+      payload_schema: '{"event": "string", "data": {"id": "string", "status": "voided"}}'
+      trigger_conditions: When a payment void is processed
+      description: Fired when authorized payment is voided
+    confidence_score: 0.85
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: payment.failed
+      payload_schema: '{"event": "string", "data": {"id": "string", "status": "failed", "error_code": "string", "error_message": "string"}}'
+      trigger_conditions: When a payment operation fails
+      description: Fired when any payment operation fails
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: payment.3ds_completed
+      payload_schema: '{"event": "string", "data": {"id": "string", "status": "string", "auth_result": "string"}}'
+      trigger_conditions: When 3DS authentication completes (success or failure)
+      description: Fired when 3D Secure flow completes
+    confidence_score: 0.72
+    source: community_report
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.10
+
+  - value:
+      event_name: payment.expired
+      payload_schema: '{"event": "string", "data": {"id": "string", "status": "expired"}}'
+      trigger_conditions: When a payment authorization expires without capture
+      description: Fired when payment reaches timeout threshold
+    confidence_score: 0.75
+    source: inferred
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.10
+
+  - value:
+      event_name: payment.reversed
+      payload_schema: '{"event": "string", "data": {"id": "string", "status": "reversed", "reason": "string"}}'
+      trigger_conditions: Discovered via sandbox testing — not in official docs
+      description: Fired for provider-initiated reversals (discovered in sandbox, not in official docs)
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+status_codes:
+  - value:
+      provider_code: AUTHORIZED
+      canonical_state: authorized
+      description: Payment successfully authorized, awaiting capture
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: CAPTURED
+      canonical_state: captured
+      description: Payment funds captured successfully
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: REFUNDED
+      canonical_state: refunded
+      description: Payment refunded to customer
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: VOIDED
+      canonical_state: voided
+      description: Authorized payment cancelled before capture
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: FAILED
+      canonical_state: failed
+      description: Payment operation failed
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: PENDING
+      canonical_state: created
+      description: Payment created, awaiting processing
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: EXPIRED
+      canonical_state: expired
+      description: Payment authorization expired without capture
+    confidence_score: 0.80
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: AWAITING_3DS
+      canonical_state: pending_3ds
+      description: Awaiting 3D Secure customer authentication
+    confidence_score: 0.78
+    source: community_report
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.10
+
+  - value:
+      provider_code: REVERSED
+      canonical_state: failed
+      description: Provider-initiated reversal (discovered in sandbox, not in official docs)
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: DECLINED
+      canonical_state: failed
+      description: Payment declined by issuing bank
+    confidence_score: 0.85
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+errors:
+  - value:
+      code: INSUFFICIENT_FUNDS
+      description: Customer account has insufficient funds
+      recovery_action: Retry with different payment method or lower amount
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: CARD_EXPIRED
+      description: Payment card has expired
+      recovery_action: Request updated card details from customer
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: INVALID_AMOUNT
+      description: Amount is invalid (negative, zero, or exceeds limits)
+      recovery_action: Validate amount before submission (integer cents, positive, within provider limits)
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: DUPLICATE_TRANSACTION
+      description: Transaction with this reference already exists
+      recovery_action: Check idempotency key and existing payment status
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: AUTHENTICATION_FAILED
+      description: API authentication failed (invalid or expired credentials)
+      recovery_action: Verify API key is correct and not expired
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: RATE_LIMIT_EXCEEDED
+      description: Too many requests in time window
+      recovery_action: Implement exponential backoff and retry after Retry-After header value
+    confidence_score: 0.80
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: 3DS_AUTHENTICATION_FAILED
+      description: 3D Secure authentication was rejected or timed out
+      recovery_action: Payment cannot proceed; inform customer and offer alternative
+    confidence_score: 0.72
+    source: community_report
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.10
+
+  - value:
+      code: CAPTURE_AMOUNT_EXCEEDED
+      description: Capture amount exceeds authorized amount
+      recovery_action: Reduce capture amount to match or be less than authorization
+    confidence_score: 0.85
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: VOID_NOT_ALLOWED
+      description: Payment cannot be voided in current state
+      recovery_action: Check payment status - only authorized (uncaptured) payments can be voided
+    confidence_score: 0.88
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+flows:
+  - value:
+      name: Standard Authorization and Capture
+      steps:
+        - Created
+        - Authorized
+        - Captured
+      description: Two-step payment flow - authorize then capture funds separately
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      name: Direct Capture
+      steps:
+        - Created
+        - Captured
+      description: Single-step payment where authorization and capture happen atomically
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      name: Authorization and Void
+      steps:
+        - Created
+        - Authorized
+        - Voided
+      description: Cancel an authorized payment before capture
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      name: Capture and Refund
+      steps:
+        - Created
+        - Authorized
+        - Captured
+        - Refunded
+      description: Full payment lifecycle with refund
+    confidence_score: 0.92
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      name: 3D Secure Authentication Flow
+      steps:
+        - Created
+        - Pending3ds
+        - Authorized
+        - Captured
+      description: Payment requiring 3DS customer verification before authorization
+    confidence_score: 0.75
+    source: community_report
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.10
+
+  - value:
+      name: Authorization Timeout
+      steps:
+        - Created
+        - Authorized
+        - Expired
+      description: Authorized payment that times out without capture (timeout period unclear from docs)
+    confidence_score: 0.70
+    source: inferred
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.10

@@ -1,0 +1,33 @@
+[workspace]
+members = [
+    "crates/payrail-core",
+    "crates/payrail-adapters",
+    "crates/payrail-cli",
+    "crates/payrail-mcp",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/kelvinnyadzayo/payrail"
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2"
+tokio = { version = "1.47", features = ["full"] }
+chrono = { version = "0.4", features = ["serde"] }
+ulid = "1"
+rusqlite = { version = "0.35", features = ["bundled"] }
+hmac = "0.12"
+sha2 = "0.10"
+subtle = "2"
+hex = "0.4"
+serde_yaml = "0.9"
+clap = { version = "4", features = ["derive"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Internal crates
+payrail-core = { path = "crates/payrail-core" }
+payrail-adapters = { path = "crates/payrail-adapters" }

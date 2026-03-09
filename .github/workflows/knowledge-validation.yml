@@ -1,0 +1,32 @@
+name: Knowledge Pack Validation
+
+on:
+  schedule:
+    - cron: "0 6 * * 3" # Weekly on Wednesday at 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Knowledge Pack Freshness Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build MCP server
+        run: pnpm --filter @payrail/mcp-server build
+
+      - name: Validate knowledge packs
+        run: pnpm --filter @payrail/mcp-server test

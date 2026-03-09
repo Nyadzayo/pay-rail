@@ -1,0 +1,30 @@
+{
+  "name": "@payrail/mcp-server",
+  "version": "0.1.0",
+  "description": "PayRail MCP server for AI-powered payment adapter generation",
+  "type": "module",
+  "bin": {
+    "payrail-mcp": "dist/cli/serve.js"
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run --passWithNoTests",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.27.1",
+    "yaml": "^2.7.0",
+    "zod": "^3.23.0"
+  }
+}

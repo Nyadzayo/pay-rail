@@ -1,0 +1,332 @@
+metadata:
+  name: peach_payments
+  display_name: Peach Payments
+  version: 1.0.0
+  base_url: https://oppwa.com/v1
+  sandbox_url: https://test.oppwa.com/v1
+  documentation_url: https://peachpayments.docs.oppwa.com
+
+endpoints:
+  - value:
+      url: /payments
+      method: POST
+      parameters:
+        - entityId
+        - amount
+        - currency
+        - paymentBrand
+        - paymentType
+      response_schema: '{"id": "string", "result": {"code": "string", "description": "string"}, "buildNumber": "string"}'
+      description: Create a payment (pre-authorization, debit, or credit)
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      url: /payments/{id}
+      method: GET
+      parameters:
+        - entityId
+      response_schema: '{"id": "string", "result": {"code": "string", "description": "string"}, "amount": "string", "currency": "string"}'
+      description: Query payment status by checkout ID
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      url: /payments/{id}
+      method: POST
+      parameters:
+        - entityId
+        - amount
+        - currency
+        - paymentType
+      response_schema: '{"id": "string", "result": {"code": "string", "description": "string"}}'
+      description: Capture, refund, or reversal on existing payment (paymentType=CP/RF/RV)
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      url: /checkouts
+      method: POST
+      parameters:
+        - entityId
+        - amount
+        - currency
+        - paymentType
+      response_schema: '{"id": "string", "result": {"code": "string", "description": "string"}}'
+      description: Create checkout for hosted payment page with 3D Secure support
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      url: /payments/{id}/refund
+      method: POST
+      parameters:
+        - entityId
+        - amount
+        - currency
+        - paymentType
+      response_schema: '{"id": "string", "result": {"code": "string", "description": "string"}}'
+      description: Process a refund on a captured payment
+    confidence_score: 0.93
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+webhooks:
+  - value:
+      event_name: charge.succeeded
+      payload_schema: '{"type": "string", "payload": {"id": "string", "result": {"code": "string"}, "amount": "string"}}'
+      trigger_conditions: When a charge (debit or pre-authorization) is processed successfully
+      description: Successful charge notification
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: charge.failed
+      payload_schema: '{"type": "string", "payload": {"id": "string", "result": {"code": "string", "description": "string"}}}'
+      trigger_conditions: When a charge fails due to decline or error
+      description: Failed charge notification
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: capture.succeeded
+      payload_schema: '{"type": "string", "payload": {"id": "string", "referencedId": "string", "amount": "string"}}'
+      trigger_conditions: When a capture on pre-authorized payment succeeds
+      description: Successful capture notification
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: refund.succeeded
+      payload_schema: '{"type": "string", "payload": {"id": "string", "referencedId": "string", "amount": "string"}}'
+      trigger_conditions: When a refund is processed successfully
+      description: Successful refund notification
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: reversal.succeeded
+      payload_schema: '{"type": "string", "payload": {"id": "string", "referencedId": "string"}}'
+      trigger_conditions: When a payment reversal (void) succeeds
+      description: Successful reversal notification
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: charge.pending
+      payload_schema: '{"type": "string", "payload": {"id": "string", "result": {"code": "string"}}}'
+      trigger_conditions: When a charge enters 3DS redirect or async processing
+      description: Pending charge requiring customer action (3DS)
+    confidence_score: 0.90
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+status_codes:
+  - value:
+      provider_code: "000.000.000"
+      canonical_state: captured
+      description: Transaction succeeded (direct debit)
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "000.100.110"
+      canonical_state: authorized
+      description: Request successfully processed in Merchant in Integrator Test Mode
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "000.100.112"
+      canonical_state: pending_3ds
+      description: Request successfully processed but requires 3DS redirect
+    confidence_score: 0.92
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.100.151"
+      canonical_state: failed
+      description: Card expired
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.100.152"
+      canonical_state: failed
+      description: Insufficient funds
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.100.155"
+      canonical_state: failed
+      description: Card blocked or restricted
+    confidence_score: 0.93
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "900.100.500"
+      canonical_state: expired
+      description: Timeout - transaction timed out with connector/acquirer
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+errors:
+  - value:
+      code: "200.100.101"
+      description: Invalid payment data - check field requirements
+      recovery_action: Validate all required fields are present and correctly formatted
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: "200.100.103"
+      description: Invalid or missing entity ID
+      recovery_action: Verify entityId matches your merchant configuration
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: "600.200.100"
+      description: Invalid payment method - brand not supported
+      recovery_action: Check supported payment brands for your merchant entity
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: "100.100.101"
+      description: Invalid authentication credentials
+      recovery_action: Regenerate API bearer token and verify entity configuration
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: "700.400.200"
+      description: Cannot capture - invalid referenced transaction
+      recovery_action: Verify pre-authorization ID exists and is in correct state for capture
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: "800.400.500"
+      description: Acquirer timeout during capture - transaction status uncertain
+      recovery_action: Query payment status before retrying capture to avoid duplicate settlement
+    confidence_score: 0.80
+    source: community_report
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.10
+
+  - value:
+      code: "100.396.103"
+      description: 3DS authentication cancelled by cardholder
+      recovery_action: Present alternative payment method or allow cardholder to retry 3DS
+    confidence_score: 0.85
+    source: historical_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.08
+
+flows:
+  - value:
+      name: Pre-Authorization and Capture
+      steps:
+        - Created
+        - Authorized
+        - Captured
+      description: Two-step flow using PA (pre-authorization) then CP (capture)
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      name: Direct Debit
+      steps:
+        - Created
+        - Captured
+      description: Single-step debit (DB) that authorizes and captures atomically
+    confidence_score: 0.95
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      name: Pre-Authorization with Reversal
+      steps:
+        - Created
+        - Authorized
+        - Voided
+      description: Cancel pre-authorization using reversal (RV) before capture
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      name: Capture and Refund
+      steps:
+        - Created
+        - Authorized
+        - Captured
+        - Refunded
+      description: Full lifecycle with refund (RF) after capture
+    confidence_score: 0.92
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      name: 3D Secure Flow
+      steps:
+        - Created
+        - Pending3ds
+        - Authorized
+        - Captured
+      description: Payment with 3DS redirect (result code 000.100.112) then completion
+    confidence_score: 0.90
+    source: sandbox_test
+    verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05

@@ -1,0 +1,23 @@
+[package]
+name = "payrail-core"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "PayRail core engine: typestate payment machine, event store, idempotency, webhook processing"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+chrono.workspace = true
+ulid.workspace = true
+rusqlite.workspace = true
+hmac.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+hex.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+serde_yaml.workspace = true

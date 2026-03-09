@@ -1,0 +1,19 @@
+# PayRail Configuration
+# User-facing configuration for confidence thresholds and provider settings
+
+confidence:
+  minimum_threshold: 0.7
+  verify_marker_threshold: 0.85
+  auto_accept_threshold: 0.95
+
+providers:
+  peach_payments:
+    enabled: true
+    sandbox: true
+  startbutton:
+    enabled: true
+    sandbox: true
+
+mcp:
+  max_context_tokens: 14000
+  tool_timeout_seconds: 10

@@ -1,0 +1,12 @@
+[package]
+name = "payrail-mcp"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "PayRail MCP bridge: Rust-side logic for MCP server integration"
+
+[dependencies]
+payrail-core.workspace = true
+payrail-adapters.workspace = true
+serde.workspace = true
+serde_json.workspace = true
