@@ -1,12 +1,178 @@
 metadata:
   name: startbutton
   display_name: Startbutton
-  version: 1.0.0
-  base_url: https://api.startbutton.co/v1
-  sandbox_url: https://sandbox.startbutton.co/v1
-  documentation_url: https://docs.startbutton.co
+  version: 2.0.0
+  base_url: https://api.startbutton.tech
+  sandbox_url: https://api.startbutton.tech
+  documentation_url: https://startbutton.gitbook.io/startbutton-product-api
+  description: Pan-African payment platform — collections, transfers (payouts/offramp), payment links, recurring charges. Merchant of Record for cross-border expansion.
+  authentication:
+    method: bearer_token
+    header: Authorization
+    format: "Bearer SECRET_KEY"
+    key_source: Dashboard Settings page
+  supported_countries:
+    - name: Nigeria
+      currency: NGN
+      channels: [bank_transfer, card]
+    - name: Ghana
+      currency: GHS
+      channels: [bank_transfer, mobile_money, card]
+    - name: South Africa
+      currency: ZAR
+      channels: [bank_transfer]
+    - name: Kenya
+      currency: KES
+      channels: [bank_transfer, mobile_money]
+    - name: Uganda
+      currency: UGX
+      channels: [mobile_money]
+    - name: Rwanda
+      currency: RWF
+      channels: [mobile_money]
+    - name: Tanzania
+      currency: TZS
+      channels: [mobile_money]
+    - name: "Côte d'Ivoire"
+      currency: XOF
+      channels: [mobile_money]
+    - name: Zambia
+      currency: ZMW
+      channels: [mobile_money]
+  supported_currencies:
+    - code: NGN
+      name: Nigerian Naira
+      minor_units: 2
+      min_charge: 5000
+    - code: GHS
+      name: Ghanaian Cedi
+      minor_units: 2
+      min_charge: 10
+    - code: ZAR
+      name: South African Rand
+      minor_units: 2
+    - code: KES
+      name: Kenyan Shilling
+      minor_units: 2
+    - code: UGX
+      name: Ugandan Shilling
+      minor_units: 0
+    - code: RWF
+      name: Rwandan Franc
+      minor_units: 0
+    - code: TZS
+      name: Tanzanian Shilling
+      minor_units: 2
+    - code: XOF
+      name: West African CFA Franc
+      minor_units: 0
+    - code: ZMW
+      name: Zambian Kwacha
+      minor_units: 2
+    - code: USD
+      name: US Dollar
+      minor_units: 2
 
 endpoints:
+  # === TRANSFER / PAYOUT (Offramp) ===
+  - value:
+      url: /transaction/transfer
+      method: POST
+      parameters:
+        - "amount (number, required) — transfer amount in minor units"
+        - "currency (string, required) — NGN, GHS, ZAR, KES, UGX, RWF, TZS, XOF, ZMW"
+        - "country (string, required) — full country name e.g. 'South Africa'"
+        - "reference (string, optional) — 16-100 alphanumeric chars, auto-generated if omitted"
+        - "webhookUrl (string, optional) — custom webhook URL for this transfer"
+        - "bankCode (string, conditional) — required for bank transfers, from bank list endpoint"
+        - "accountNumber (string, conditional) — required for bank transfers"
+        - "accountName (string, conditional) — required for ZAR, optional for KES"
+        - "MNO (string, conditional) — required for mobile money: MTN, MPESA, AIRTEL, TIGO, VODAFONE"
+        - "msisdn (string, conditional) — required for mobile money, phone with country code"
+        - "recipientFirstName (string, optional) — required for XOF only"
+        - "recipientLastName (string, optional) — required for XOF only"
+      response_schema: '{"success": true, "message": "transfer", "data": "processing"}'
+      description: "Send funds to customer/vendor bank account or mobile money. ZAR payouts via bank transfer only (bankCode + accountNumber + accountName required). Mobile money requires MNO + msisdn. Reference must be 16-100 alphanumeric chars. Daily limit: ~$500 equivalent."
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  # === TRANSACTION STATUS ===
+  - value:
+      url: /transaction/status/{reference}
+      method: GET
+      parameters:
+        - "reference (string, required) — transaction reference as path parameter"
+      response_schema: '{"success": true, "message": "string", "data": {"transaction": {"_id": "string", "transType": "transfer|collection", "status": "string", "transactionReference": "string", "userTransactionReference": "string", "amount": "number", "currency": "string", "feeAmount": "number", "merchantId": "string", "createdAt": "ISO8601", "updatedAt": "ISO8601", "isRecurrent": "boolean", "recipient": {"recipientName": "string", "currency": "string", "institutionType": "string", "institutionName": "string", "institutionNumber": "string"}}, "authorizationCode": "string|null"}}'
+      description: "Retrieve transaction details by reference. Works for both transfers and collections. Returns full transaction object with status, amounts, fees, and recipient details."
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  # === WALLET BALANCE ===
+  - value:
+      url: /wallet
+      method: GET
+      parameters: []
+      response_schema: '{"success": true, "message": "string", "data": [{"_id": "string", "currency": "string", "availableBalance": "number", "ledgerBalance": "number", "createdAt": "ISO8601", "updatedAt": "ISO8601"}]}'
+      description: "Get wallet balances for all enabled collection currencies. Returns availableBalance (spendable) and ledgerBalance (total including pending)."
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  # === PAYMENT LINKS ===
+  - value:
+      url: /paymentlink
+      method: POST
+      parameters:
+        - "title (string, required) — name/title of the payment link"
+        - "currency (string, required) — USD, NGN, GHS, KES, ZAR"
+        - "amount (number, required) — minor units (e.g. 300 NGN = 30000)"
+        - "isFixedAmount (boolean, required) — true = exact amount; false = donation mode"
+        - "type (string, required) — must be 'easy'"
+        - "purpose (string, optional) — description on merchant dashboard"
+      response_schema: '{"success": true, "data": {"paymentLink": {"link": "string", "code": "string", "merchantId": "string", "amount": "number", "currency": "string", "active": "boolean"}}}'
+      description: "Create a shareable payment link. Supports fixed and donation amounts. Currencies: USD, NGN, GHS, KES, ZAR."
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  # === RECURRING CHARGE (Re-charge Card) ===
+  - value:
+      url: /transaction/recurrent
+      method: POST
+      parameters:
+        - "authorizationCode (string, required) — from initial transaction webhook or status endpoint"
+        - "amount (number, required) — in original card currency minor units"
+        - "reference (string, required) — unique reference for this charge"
+      response_schema: '{"success": true, "message": "transaction", "data": "processing"}'
+      description: "Charge a previously authorized card. Requires successful first charge via initialize endpoint. Min first charge: NGN 50.00 / GHS 0.10. Contact Startbutton team for feature activation. Webhook includes isRecurrent: true."
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  # === COLLECTION (Initialize) ===
+  - value:
+      url: /transaction/collection
+      method: POST
+      parameters:
+        - "amount (number, required) — collection amount in minor units"
+        - "currency (string, required) — NGN, GHS, KES, UGX, ZAR, RWF, TZS, XOF"
+        - "reference (string, optional) — unique transaction reference"
+        - "webhookUrl (string, optional) — custom webhook URL for this collection"
+      response_schema: '{"success": true, "message": "string", "data": "processing"}'
+      description: "Initialize a collection (inbound payment). Supports bank transfer and mobile money across supported currencies. Server-to-server integration."
+    confidence_score: 0.75
+    source: inferred
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.10
+
+  # === Existing endpoints (kept for backward compat) ===
   - value:
       url: /payments
       method: POST
@@ -17,8 +183,8 @@ endpoints:
         - payment_method
         - return_url
       response_schema: '{"id": "string", "status": "string", "amount": "integer", "currency": "string", "created_at": "string"}'
-      description: Create a new payment transaction
-    confidence_score: 0.95
+      description: Create a new payment transaction (card payments via checkout flow)
+    confidence_score: 0.85
     source: sandbox_test
     verification_date: "2026-03-06T00:00:00Z"
     decay_rate: 0.05
@@ -30,7 +196,7 @@ endpoints:
         - id
       response_schema: '{"id": "string", "status": "string", "amount": "integer", "currency": "string", "events": "array"}'
       description: Retrieve payment details by ID
-    confidence_score: 0.95
+    confidence_score: 0.85
     source: sandbox_test
     verification_date: "2026-03-06T00:00:00Z"
     decay_rate: 0.05
@@ -101,6 +267,46 @@ endpoints:
     decay_rate: 0.05
 
 webhooks:
+  - value:
+      event_name: collection.completed
+      payload_schema: '{"event": "collection.completed", "data": {"merchantId": "string", "paymentPartner": "string", "transactionReference": "string", "userTransactionReference": "string", "status": "string", "amount": "number", "currency": "string", "feeAmount": "number", "customerEmail": "string", "authorizationCode": "string", "isRecurrent": "boolean", "paymentCode": "string", "createdAt": "ISO8601"}}'
+      trigger_conditions: When a collection (inbound payment) completes successfully
+      description: "Primary collection webhook. Contains authorizationCode for subsequent recurring charges. Store this code for re-charge flow."
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: transfer.successful
+      payload_schema: '{"event": "transfer.successful", "data": {"transactionReference": "string", "userTransactionReference": "string", "status": "Successful", "amount": "number", "currency": "string", "recipient": {"recipientName": "string", "currency": "string", "institutionType": "string", "institutionName": "string"}}}'
+      trigger_conditions: When a transfer/payout completes successfully
+      description: "Fired when funds are successfully delivered to recipient. Final status for offramp leg."
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: transfer.failed
+      payload_schema: '{"event": "transfer.failed", "data": {"transactionReference": "string", "status": "Failed", "amount": "number", "currency": "string", "reason": "string"}}'
+      trigger_conditions: When a transfer/payout fails
+      description: Transfer could not be processed. Check reason field.
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      event_name: transfer.reversed
+      payload_schema: '{"event": "transfer.reversed", "data": {"transactionReference": "string", "status": "Reversed", "amount": "number", "currency": "string", "reason": "string"}}'
+      trigger_conditions: When a transfer is reversed by bank/operator
+      description: "Funds reversed by bank or mobile money operator. Funds automatically refunded to merchant wallet."
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
   - value:
       event_name: payment.authorized
       payload_schema: '{"event": "string", "data": {"id": "string", "status": "authorized", "amount": "integer", "currency": "string"}}'
@@ -183,6 +389,60 @@ webhooks:
 
 status_codes:
   - value:
+      provider_code: Initiated
+      canonical_state: created
+      description: "Transfer initiated for payment processing"
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: Pending
+      canonical_state: created
+      description: "Transaction picked up for processing"
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: Processing
+      canonical_state: authorized
+      description: "Awaiting confirmation from payment partner"
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: Successful
+      canonical_state: captured
+      description: "Transfer processed successfully — funds delivered"
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: Failed
+      canonical_state: failed
+      description: "Transfer could not be processed"
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: Reversed
+      canonical_state: refunded
+      description: "Reversed by bank/operator — funds refunded to merchant wallet"
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
       provider_code: AUTHORIZED
       canonical_state: authorized
       description: Payment successfully authorized, awaiting capture
@@ -219,24 +479,6 @@ status_codes:
     decay_rate: 0.05
 
   - value:
-      provider_code: FAILED
-      canonical_state: failed
-      description: Payment operation failed
-    confidence_score: 0.95
-    source: sandbox_test
-    verification_date: "2026-03-06T00:00:00Z"
-    decay_rate: 0.05
-
-  - value:
-      provider_code: PENDING
-      canonical_state: created
-      description: Payment created, awaiting processing
-    confidence_score: 0.90
-    source: official_docs
-    verification_date: "2026-03-06T00:00:00Z"
-    decay_rate: 0.05
-
-  - value:
       provider_code: EXPIRED
       canonical_state: expired
       description: Payment authorization expired without capture
@@ -255,15 +497,6 @@ status_codes:
     decay_rate: 0.10
 
   - value:
-      provider_code: REVERSED
-      canonical_state: failed
-      description: Provider-initiated reversal (discovered in sandbox, not in official docs)
-    confidence_score: 0.95
-    source: sandbox_test
-    verification_date: "2026-03-06T00:00:00Z"
-    decay_rate: 0.05
-
-  - value:
       provider_code: DECLINED
       canonical_state: failed
       description: Payment declined by issuing bank
@@ -275,11 +508,56 @@ status_codes:
 errors:
   - value:
       code: INSUFFICIENT_FUNDS
-      description: Customer account has insufficient funds
-      recovery_action: Retry with different payment method or lower amount
+      description: "Insufficient funds in wallet for transfer"
+      recovery_action: "Top up merchant wallet for the currency. Error message includes remaining balance."
     confidence_score: 0.95
-    source: sandbox_test
-    verification_date: "2026-03-06T00:00:00Z"
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: DAILY_LIMIT_EXCEEDED
+      description: "Daily transfer limit exceeded (₦1,000,000 NGN or ~$500 equivalent)"
+      recovery_action: "Wait until next day or contact Startbutton to increase limit. Error includes remaining daily allowance."
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: INVALID_BANK_PARAMS
+      description: "Missing bankCode/accountNumber pair or MNO/msisdn pair"
+      recovery_action: "Provide either bankCode + accountNumber (bank transfer) or MNO + msisdn (mobile money)"
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: ACCOUNT_RESOLUTION_FAILED
+      description: "Could not resolve account name from bank"
+      recovery_action: "Verify accountNumber and bankCode are correct. Not available for ZAR."
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: DUPLICATE_TRANSACTION
+      description: Transaction with this reference already exists (HTTP 409)
+      recovery_action: Use a unique reference per transaction. Check existing transaction status.
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      code: INVALID_REFERENCE
+      description: "Reference must be 16-100 alphanumeric characters"
+      recovery_action: "Generate a reference string between 16 and 100 alphanumeric characters"
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
     decay_rate: 0.05
 
   - value:
@@ -294,25 +572,16 @@ errors:
   - value:
       code: INVALID_AMOUNT
       description: Amount is invalid (negative, zero, or exceeds limits)
-      recovery_action: Validate amount before submission (integer cents, positive, within provider limits)
+      recovery_action: Validate amount before submission (integer minor units, positive, within provider limits)
     confidence_score: 0.95
     source: sandbox_test
     verification_date: "2026-03-06T00:00:00Z"
     decay_rate: 0.05
 
   - value:
-      code: DUPLICATE_TRANSACTION
-      description: Transaction with this reference already exists
-      recovery_action: Check idempotency key and existing payment status
-    confidence_score: 0.90
-    source: official_docs
-    verification_date: "2026-03-06T00:00:00Z"
-    decay_rate: 0.05
-
-  - value:
       code: AUTHENTICATION_FAILED
-      description: API authentication failed (invalid or expired credentials)
-      recovery_action: Verify API key is correct and not expired
+      description: API authentication failed (invalid or expired SECRET_KEY)
+      recovery_action: Verify SECRET_KEY from Dashboard Settings page is correct and active
     confidence_score: 0.95
     source: sandbox_test
     verification_date: "2026-03-06T00:00:00Z"
@@ -354,7 +623,69 @@ errors:
     verification_date: "2026-03-06T00:00:00Z"
     decay_rate: 0.05
 
+  - value:
+      code: ZAR_ACCOUNT_VALIDATION_UNAVAILABLE
+      description: "Account name validation not available for ZAR transfers"
+      recovery_action: "Manually verify recipient details before sending ZAR transfers. accountName is required."
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
 flows:
+  # === OFFRAMP FLOWS ===
+  - value:
+      name: ZAR Bank Transfer Offramp
+      steps:
+        - Initiated
+        - Pending
+        - Processing
+        - Successful
+      description: "Offramp flow: crypto/digital → ZAR bank transfer. Requires bankCode, accountNumber, accountName. No account validation available for ZAR."
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      name: Mobile Money Offramp
+      steps:
+        - Initiated
+        - Pending
+        - Processing
+        - Successful
+      description: "Offramp via mobile money (GHS, KES, UGX, RWF, TZS, XOF, ZMW). Requires MNO and msisdn."
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      name: Transfer Reversal
+      steps:
+        - Initiated
+        - Pending
+        - Processing
+        - Reversed
+      description: "Bank/operator reverses transfer. Funds auto-refunded to merchant wallet."
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      name: Transfer Failure
+      steps:
+        - Initiated
+        - Pending
+        - Failed
+      description: "Transfer fails at processing stage. Check error reason."
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
+
+  # === COLLECTION FLOWS ===
   - value:
       name: Standard Authorization and Capture
       steps:
@@ -415,6 +746,18 @@ flows:
     source: community_report
     verification_date: "2026-03-06T00:00:00Z"
     decay_rate: 0.10
+
+  - value:
+      name: Recurring Charge Flow
+      steps:
+        - Collection Completed
+        - Store authorizationCode
+        - Re-charge via /transaction/recurrent
+      description: "First charge via collection → store authorizationCode → subsequent charges via recurrent endpoint. Webhook includes isRecurrent: true."
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-10T00:00:00Z"
+    decay_rate: 0.05
 
   - value:
       name: Authorization Timeout

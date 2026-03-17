@@ -96,7 +96,7 @@ Invalid transitions are caught at compile time:
 // These will NOT compile:
 // payment.refund(now);        // Can't refund a Created payment
 // captured.authorize(now);    // Can't re-authorize a Captured payment
-// refunded.capture(now);      // Refunded is terminal — no further transitions
+// refunded.capture(now);      // Can't capture a Refunded payment
 ```
 
 **State transition map:**
@@ -116,9 +116,12 @@ stateDiagram-v2
     Authorized --> Failed
     Authorized --> TimedOut
     Captured --> Refunded
+    Captured --> Settled
     Captured --> Failed
+    Captured --> TimedOut
+    Refunded --> Settled
     TimedOut --> Failed
-    Refunded --> [*]
+    Settled --> [*]
     Voided --> [*]
     Failed --> [*]
 ```
@@ -281,7 +284,7 @@ Query types: `overview`, `endpoints`, `webhooks`, `status_codes`, `error_codes`,
 
 **`generate_adapter`** — Generate a conformance-tested adapter that matches your codebase conventions. The MCP server fingerprints your project (language, framework, ORM, test framework) and generates code that looks like you wrote it.
 
-**`validate_state_machine`** — Validate payment state transitions in your code against the canonical 8-state machine. Detects missing transitions, invalid transitions, and unreachable states.
+**`validate_state_machine`** — Validate payment state transitions in your code against the canonical 9-state machine. Detects missing transitions, invalid transitions, and unreachable states.
 
 **`run_conformance`** — Run the conformance test suite against an adapter. Tests all canonical state transitions for correctness.
 
@@ -305,6 +308,45 @@ match payment.try_transition(PaymentState::Authorized, now) {
     }
 }
 ```
+
+### 9. Reconcile and Settle Payments
+
+The reconciliation engine continuously verifies that your app's state matches the provider's confirmed state. When both agree, payments transition to `Settled`:
+
+```rust
+use payrail_core::reconciliation::{ReconciliationEngine, ReconciliationConfig};
+use payrail_core::SqliteEventStore;
+
+let store = SqliteEventStore::new("./payrail.db")?;
+let engine = ReconciliationEngine::new(store, ReconciliationConfig::default());
+
+// Reconcile a single payment
+let result = engine.reconcile_payment(&payment_id, "peach_payments", Utc::now()).await?;
+
+// Full cycle: reconcile → detect discrepancies → auto-resolve → escalate → settle
+let cycle = engine.reconcile_and_handle(
+    "peach_payments",
+    &payment_ids,
+    Utc::now(),
+    &escalation_sink,
+).await?;
+
+println!("Matched: {}", cycle.matched);
+println!("Settled: {}", cycle.settled);
+println!("Escalated: {}", cycle.escalated);
+```
+
+From the CLI:
+
+```bash
+# View reconciliation report
+payrail reconciliation --provider peach_payments --period 24h
+
+# JSON output for dashboards
+payrail --json reconciliation --provider peach_payments
+```
+
+See [docs/reconciliation.md](docs/reconciliation.md) for the full guide.
 
 ## Architecture
 
@@ -341,15 +383,16 @@ graph TB
     MCP_Server --> VSCode
 ```
 
-### Five-Layer Defense in Depth
+### Six-Layer Defense in Depth
 
-Every payment passes through five independent safety barriers:
+Every payment passes through six independent safety barriers:
 
 1. **Type system** — invalid transitions are compiler errors
 2. **State machine** — runtime validation of canonical payment lifecycle
 3. **Fail-closed idempotency** — duplicate requests are rejected, never processed unsafely
 4. **Append-only event store** — full audit trail, no updates or deletes
 5. **Webhook signature verification** — timing-safe HMAC, reject tampered payloads
+6. **Continuous reconciliation** — verifies app state matches provider-confirmed state, auto-settles matched payments
 
 ## Project Structure
 
@@ -358,7 +401,7 @@ payrail/
 ├── crates/
 │   ├── payrail-core/        # Typestate payment engine, event store, idempotency
 │   ├── payrail-adapters/    # Provider-specific adapters (Peach, Startbutton)
-│   ├── payrail-cli/         # CLI tool (Phase 2)
+│   ├── payrail-cli/         # CLI tool
 │   └── payrail-mcp/         # Rust-side MCP bridge logic
 ├── packages/
 │   ├── mcp-server/          # @payrail/mcp-server — AI tool interface (npm)
@@ -372,10 +415,10 @@ payrail/
 
 | Crate | Purpose |
 |-------|---------|
-| `payrail-core` | Typestate payment machine, canonical events, event store, idempotency engine, webhook receiver |
+| `payrail-core` | Typestate payment machine, canonical events, event store, idempotency engine, webhook receiver, reconciliation engine |
 | `payrail-adapters` | Provider adapters implementing the core adapter trait (Peach Payments, Startbutton) |
 | `payrail-mcp` | Rust-side MCP bridge logic for cross-language calls |
-| `payrail-cli` | Command-line interface (Phase 2, stubbed) |
+| `payrail-cli` | Command-line interface — knowledge packs, adapter generation, conformance, reconciliation |
 
 ### TypeScript Packages
 

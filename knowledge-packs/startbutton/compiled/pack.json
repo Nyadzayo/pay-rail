@@ -1,0 +1,801 @@
+{
+  "version": "startbutton@2026-03-10",
+  "metadata": {
+    "name": "startbutton",
+    "display_name": "Startbutton",
+    "version": "2.0.0",
+    "base_url": "https://api.startbutton.tech",
+    "sandbox_url": "https://api.startbutton.tech",
+    "documentation_url": "https://startbutton.gitbook.io/startbutton-product-api"
+  },
+  "facts": [
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/transaction/transfer",
+        "method": "POST",
+        "parameters": [
+          "amount (number, required) — transfer amount in minor units",
+          "currency (string, required) — NGN, GHS, ZAR, KES, UGX, RWF, TZS, XOF, ZMW",
+          "country (string, required) — full country name e.g. 'South Africa'",
+          "reference (string, optional) — 16-100 alphanumeric chars, auto-generated if omitted",
+          "webhookUrl (string, optional) — custom webhook URL for this transfer",
+          "bankCode (string, conditional) — required for bank transfers, from bank list endpoint",
+          "accountNumber (string, conditional) — required for bank transfers",
+          "accountName (string, conditional) — required for ZAR, optional for KES",
+          "MNO (string, conditional) — required for mobile money: MTN, MPESA, AIRTEL, TIGO, VODAFONE",
+          "msisdn (string, conditional) — required for mobile money, phone with country code",
+          "recipientFirstName (string, optional) — required for XOF only",
+          "recipientLastName (string, optional) — required for XOF only"
+        ],
+        "response_schema": "{\"success\": true, \"message\": \"transfer\", \"data\": \"processing\"}",
+        "description": "Send funds to customer/vendor bank account or mobile money. ZAR payouts via bank transfer only (bankCode + accountNumber + accountName required). Mobile money requires MNO + msisdn. Reference must be 16-100 alphanumeric chars. Daily limit: ~$500 equivalent."
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/transaction/status/{reference}",
+        "method": "GET",
+        "parameters": [
+          "reference (string, required) — transaction reference as path parameter"
+        ],
+        "response_schema": "{\"success\": true, \"message\": \"string\", \"data\": {\"transaction\": {\"_id\": \"string\", \"transType\": \"transfer|collection\", \"status\": \"string\", \"transactionReference\": \"string\", \"userTransactionReference\": \"string\", \"amount\": \"number\", \"currency\": \"string\", \"feeAmount\": \"number\", \"merchantId\": \"string\", \"createdAt\": \"ISO8601\", \"updatedAt\": \"ISO8601\", \"isRecurrent\": \"boolean\", \"recipient\": {\"recipientName\": \"string\", \"currency\": \"string\", \"institutionType\": \"string\", \"institutionName\": \"string\", \"institutionNumber\": \"string\"}}, \"authorizationCode\": \"string|null\"}}",
+        "description": "Retrieve transaction details by reference. Works for both transfers and collections. Returns full transaction object with status, amounts, fees, and recipient details."
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/wallet",
+        "method": "GET",
+        "parameters": [],
+        "response_schema": "{\"success\": true, \"message\": \"string\", \"data\": [{\"_id\": \"string\", \"currency\": \"string\", \"availableBalance\": \"number\", \"ledgerBalance\": \"number\", \"createdAt\": \"ISO8601\", \"updatedAt\": \"ISO8601\"}]}",
+        "description": "Get wallet balances for all enabled collection currencies. Returns availableBalance (spendable) and ledgerBalance (total including pending)."
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/paymentlink",
+        "method": "POST",
+        "parameters": [
+          "title (string, required) — name/title of the payment link",
+          "currency (string, required) — USD, NGN, GHS, KES, ZAR",
+          "amount (number, required) — minor units (e.g. 300 NGN = 30000)",
+          "isFixedAmount (boolean, required) — true = exact amount; false = donation mode",
+          "type (string, required) — must be 'easy'",
+          "purpose (string, optional) — description on merchant dashboard"
+        ],
+        "response_schema": "{\"success\": true, \"data\": {\"paymentLink\": {\"link\": \"string\", \"code\": \"string\", \"merchantId\": \"string\", \"amount\": \"number\", \"currency\": \"string\", \"active\": \"boolean\"}}}",
+        "description": "Create a shareable payment link. Supports fixed and donation amounts. Currencies: USD, NGN, GHS, KES, ZAR."
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/transaction/recurrent",
+        "method": "POST",
+        "parameters": [
+          "authorizationCode (string, required) — from initial transaction webhook or status endpoint",
+          "amount (number, required) — in original card currency minor units",
+          "reference (string, required) — unique reference for this charge"
+        ],
+        "response_schema": "{\"success\": true, \"message\": \"transaction\", \"data\": \"processing\"}",
+        "description": "Charge a previously authorized card. Requires successful first charge via initialize endpoint. Min first charge: NGN 50.00 / GHS 0.10. Contact Startbutton team for feature activation. Webhook includes isRecurrent: true."
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/transaction/collection",
+        "method": "POST",
+        "parameters": [
+          "amount (number, required) — collection amount in minor units",
+          "currency (string, required) — NGN, GHS, KES, UGX, ZAR, RWF, TZS, XOF",
+          "reference (string, optional) — unique transaction reference",
+          "webhookUrl (string, optional) — custom webhook URL for this collection"
+        ],
+        "response_schema": "{\"success\": true, \"message\": \"string\", \"data\": \"processing\"}",
+        "description": "Initialize a collection (inbound payment). Supports bank transfer and mobile money across supported currencies. Server-to-server integration."
+      },
+      "confidence_score": 0.75,
+      "source": "inferred",
+      "verify_marker": "// VERIFY: Initialize a collection (inbound payment). Supports bank transfer and mobile money across supported currencies. Server-to-server integration. (confidence: 0.75, source: inferred, check: Verify this endpoints fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/payments",
+        "method": "POST",
+        "parameters": [
+          "amount",
+          "currency",
+          "merchant_reference",
+          "payment_method",
+          "return_url"
+        ],
+        "response_schema": "{\"id\": \"string\", \"status\": \"string\", \"amount\": \"integer\", \"currency\": \"string\", \"created_at\": \"string\"}",
+        "description": "Create a new payment transaction (card payments via checkout flow)"
+      },
+      "confidence_score": 0.85,
+      "source": "sandbox_test",
+      "verify_marker": "// VERIFY: Create a new payment transaction (card payments via checkout flow) (confidence: 0.85, source: sandbox_test, check: Verify this endpoints fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/payments/{id}",
+        "method": "GET",
+        "parameters": [
+          "id"
+        ],
+        "response_schema": "{\"id\": \"string\", \"status\": \"string\", \"amount\": \"integer\", \"currency\": \"string\", \"events\": \"array\"}",
+        "description": "Retrieve payment details by ID"
+      },
+      "confidence_score": 0.85,
+      "source": "sandbox_test",
+      "verify_marker": "// VERIFY: Retrieve payment details by ID (confidence: 0.85, source: sandbox_test, check: Verify this endpoints fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/payments/{id}/capture",
+        "method": "POST",
+        "parameters": [
+          "id",
+          "amount"
+        ],
+        "response_schema": "{\"id\": \"string\", \"status\": \"string\", \"captured_amount\": \"integer\"}",
+        "description": "Capture a previously authorized payment"
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/payments/{id}/refund",
+        "method": "POST",
+        "parameters": [
+          "id",
+          "amount",
+          "reason"
+        ],
+        "response_schema": "{\"id\": \"string\", \"refund_id\": \"string\", \"status\": \"string\", \"amount\": \"integer\"}",
+        "description": "Refund a captured payment (full or partial)"
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/payments/{id}/void",
+        "method": "POST",
+        "parameters": [
+          "id"
+        ],
+        "response_schema": "{\"id\": \"string\", \"status\": \"string\"}",
+        "description": "Void an authorized payment before capture"
+      },
+      "confidence_score": 0.85,
+      "source": "official_docs",
+      "verify_marker": "// VERIFY: Void an authorized payment before capture (confidence: 0.85, source: official_docs, check: Verify this endpoints fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/payments/{id}/3ds",
+        "method": "POST",
+        "parameters": [
+          "id",
+          "browser_info"
+        ],
+        "response_schema": "{\"redirect_url\": \"string\", \"session_id\": \"string\"}",
+        "description": "Initiate 3D Secure authentication flow"
+      },
+      "confidence_score": 0.78,
+      "source": "community_report",
+      "verify_marker": "// VERIFY: Initiate 3D Secure authentication flow (confidence: 0.78, source: community_report, check: Verify this endpoints fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "endpoints",
+      "value": {
+        "url": "/webhooks",
+        "method": "POST",
+        "parameters": [
+          "url",
+          "events"
+        ],
+        "response_schema": "{\"id\": \"string\", \"url\": \"string\", \"events\": \"array\", \"active\": \"boolean\"}",
+        "description": "Register a webhook endpoint for event notifications"
+      },
+      "confidence_score": 0.85,
+      "source": "official_docs",
+      "verify_marker": "// VERIFY: Register a webhook endpoint for event notifications (confidence: 0.85, source: official_docs, check: Verify this endpoints fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "collection.completed",
+        "payload_schema": "{\"event\": \"collection.completed\", \"data\": {\"merchantId\": \"string\", \"paymentPartner\": \"string\", \"transactionReference\": \"string\", \"userTransactionReference\": \"string\", \"status\": \"string\", \"amount\": \"number\", \"currency\": \"string\", \"feeAmount\": \"number\", \"customerEmail\": \"string\", \"authorizationCode\": \"string\", \"isRecurrent\": \"boolean\", \"paymentCode\": \"string\", \"createdAt\": \"ISO8601\"}}",
+        "trigger_conditions": "When a collection (inbound payment) completes successfully",
+        "description": "Primary collection webhook. Contains authorizationCode for subsequent recurring charges. Store this code for re-charge flow."
+      },
+      "confidence_score": 0.92,
+      "source": "official_docs"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "transfer.successful",
+        "payload_schema": "{\"event\": \"transfer.successful\", \"data\": {\"transactionReference\": \"string\", \"userTransactionReference\": \"string\", \"status\": \"Successful\", \"amount\": \"number\", \"currency\": \"string\", \"recipient\": {\"recipientName\": \"string\", \"currency\": \"string\", \"institutionType\": \"string\", \"institutionName\": \"string\"}}}",
+        "trigger_conditions": "When a transfer/payout completes successfully",
+        "description": "Fired when funds are successfully delivered to recipient. Final status for offramp leg."
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "transfer.failed",
+        "payload_schema": "{\"event\": \"transfer.failed\", \"data\": {\"transactionReference\": \"string\", \"status\": \"Failed\", \"amount\": \"number\", \"currency\": \"string\", \"reason\": \"string\"}}",
+        "trigger_conditions": "When a transfer/payout fails",
+        "description": "Transfer could not be processed. Check reason field."
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "transfer.reversed",
+        "payload_schema": "{\"event\": \"transfer.reversed\", \"data\": {\"transactionReference\": \"string\", \"status\": \"Reversed\", \"amount\": \"number\", \"currency\": \"string\", \"reason\": \"string\"}}",
+        "trigger_conditions": "When a transfer is reversed by bank/operator",
+        "description": "Funds reversed by bank or mobile money operator. Funds automatically refunded to merchant wallet."
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "payment.authorized",
+        "payload_schema": "{\"event\": \"string\", \"data\": {\"id\": \"string\", \"status\": \"authorized\", \"amount\": \"integer\", \"currency\": \"string\"}}",
+        "trigger_conditions": "When a payment is successfully authorized",
+        "description": "Fired when payment authorization succeeds"
+      },
+      "confidence_score": 0.95,
+      "source": "sandbox_test"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "payment.captured",
+        "payload_schema": "{\"event\": \"string\", \"data\": {\"id\": \"string\", \"status\": \"captured\", \"amount\": \"integer\", \"captured_amount\": \"integer\"}}",
+        "trigger_conditions": "When a payment capture is completed",
+        "description": "Fired when payment is successfully captured"
+      },
+      "confidence_score": 0.95,
+      "source": "sandbox_test"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "payment.refunded",
+        "payload_schema": "{\"event\": \"string\", \"data\": {\"id\": \"string\", \"status\": \"refunded\", \"refund_id\": \"string\", \"amount\": \"integer\"}}",
+        "trigger_conditions": "When a refund is processed",
+        "description": "Fired when payment refund completes"
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "payment.voided",
+        "payload_schema": "{\"event\": \"string\", \"data\": {\"id\": \"string\", \"status\": \"voided\"}}",
+        "trigger_conditions": "When a payment void is processed",
+        "description": "Fired when authorized payment is voided"
+      },
+      "confidence_score": 0.85,
+      "source": "official_docs",
+      "verify_marker": "// VERIFY: Fired when authorized payment is voided (confidence: 0.85, source: official_docs, check: Verify this webhooks fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "payment.failed",
+        "payload_schema": "{\"event\": \"string\", \"data\": {\"id\": \"string\", \"status\": \"failed\", \"error_code\": \"string\", \"error_message\": \"string\"}}",
+        "trigger_conditions": "When a payment operation fails",
+        "description": "Fired when any payment operation fails"
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "payment.3ds_completed",
+        "payload_schema": "{\"event\": \"string\", \"data\": {\"id\": \"string\", \"status\": \"string\", \"auth_result\": \"string\"}}",
+        "trigger_conditions": "When 3DS authentication completes (success or failure)",
+        "description": "Fired when 3D Secure flow completes"
+      },
+      "confidence_score": 0.72,
+      "source": "community_report",
+      "verify_marker": "// VERIFY: Fired when 3D Secure flow completes (confidence: 0.72, source: community_report, check: Verify this webhooks fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "payment.expired",
+        "payload_schema": "{\"event\": \"string\", \"data\": {\"id\": \"string\", \"status\": \"expired\"}}",
+        "trigger_conditions": "When a payment authorization expires without capture",
+        "description": "Fired when payment reaches timeout threshold"
+      },
+      "confidence_score": 0.75,
+      "source": "inferred",
+      "verify_marker": "// VERIFY: Fired when payment reaches timeout threshold (confidence: 0.75, source: inferred, check: Verify this webhooks fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "webhooks",
+      "value": {
+        "event_name": "payment.reversed",
+        "payload_schema": "{\"event\": \"string\", \"data\": {\"id\": \"string\", \"status\": \"reversed\", \"reason\": \"string\"}}",
+        "trigger_conditions": "Discovered via sandbox testing — not in official docs",
+        "description": "Fired for provider-initiated reversals (discovered in sandbox, not in official docs)"
+      },
+      "confidence_score": 0.95,
+      "source": "sandbox_test"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "Initiated",
+        "canonical_state": "created",
+        "description": "Transfer initiated for payment processing"
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "Pending",
+        "canonical_state": "created",
+        "description": "Transaction picked up for processing"
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "Processing",
+        "canonical_state": "authorized",
+        "description": "Awaiting confirmation from payment partner"
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "Successful",
+        "canonical_state": "captured",
+        "description": "Transfer processed successfully — funds delivered"
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "Failed",
+        "canonical_state": "failed",
+        "description": "Transfer could not be processed"
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "Reversed",
+        "canonical_state": "refunded",
+        "description": "Reversed by bank/operator — funds refunded to merchant wallet"
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "AUTHORIZED",
+        "canonical_state": "authorized",
+        "description": "Payment successfully authorized, awaiting capture"
+      },
+      "confidence_score": 0.95,
+      "source": "sandbox_test"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "CAPTURED",
+        "canonical_state": "captured",
+        "description": "Payment funds captured successfully"
+      },
+      "confidence_score": 0.95,
+      "source": "sandbox_test"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "REFUNDED",
+        "canonical_state": "refunded",
+        "description": "Payment refunded to customer"
+      },
+      "confidence_score": 0.95,
+      "source": "sandbox_test"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "VOIDED",
+        "canonical_state": "voided",
+        "description": "Authorized payment cancelled before capture"
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "EXPIRED",
+        "canonical_state": "expired",
+        "description": "Payment authorization expired without capture"
+      },
+      "confidence_score": 0.8,
+      "source": "official_docs",
+      "verify_marker": "// VERIFY: Payment authorization expired without capture (confidence: 0.8, source: official_docs, check: Verify this status_codes mapping against provider documentation or sandbox)"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "AWAITING_3DS",
+        "canonical_state": "pending_3ds",
+        "description": "Awaiting 3D Secure customer authentication"
+      },
+      "confidence_score": 0.78,
+      "source": "community_report",
+      "verify_marker": "// VERIFY: Awaiting 3D Secure customer authentication (confidence: 0.78, source: community_report, check: Verify this status_codes mapping against provider documentation or sandbox)"
+    },
+    {
+      "category": "status_codes",
+      "value": {
+        "provider_code": "DECLINED",
+        "canonical_state": "failed",
+        "description": "Payment declined by issuing bank"
+      },
+      "confidence_score": 0.85,
+      "source": "official_docs",
+      "verify_marker": "// VERIFY: Payment declined by issuing bank (confidence: 0.85, source: official_docs, check: Verify this status_codes mapping against provider documentation or sandbox)"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "INSUFFICIENT_FUNDS",
+        "description": "Insufficient funds in wallet for transfer",
+        "recovery_action": "Top up merchant wallet for the currency. Error message includes remaining balance."
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "DAILY_LIMIT_EXCEEDED",
+        "description": "Daily transfer limit exceeded (₦1,000,000 NGN or ~$500 equivalent)",
+        "recovery_action": "Wait until next day or contact Startbutton to increase limit. Error includes remaining daily allowance."
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "INVALID_BANK_PARAMS",
+        "description": "Missing bankCode/accountNumber pair or MNO/msisdn pair",
+        "recovery_action": "Provide either bankCode + accountNumber (bank transfer) or MNO + msisdn (mobile money)"
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "ACCOUNT_RESOLUTION_FAILED",
+        "description": "Could not resolve account name from bank",
+        "recovery_action": "Verify accountNumber and bankCode are correct. Not available for ZAR."
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "DUPLICATE_TRANSACTION",
+        "description": "Transaction with this reference already exists (HTTP 409)",
+        "recovery_action": "Use a unique reference per transaction. Check existing transaction status."
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "INVALID_REFERENCE",
+        "description": "Reference must be 16-100 alphanumeric characters",
+        "recovery_action": "Generate a reference string between 16 and 100 alphanumeric characters"
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "CARD_EXPIRED",
+        "description": "Payment card has expired",
+        "recovery_action": "Request updated card details from customer"
+      },
+      "confidence_score": 0.92,
+      "source": "official_docs"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "INVALID_AMOUNT",
+        "description": "Amount is invalid (negative, zero, or exceeds limits)",
+        "recovery_action": "Validate amount before submission (integer minor units, positive, within provider limits)"
+      },
+      "confidence_score": 0.95,
+      "source": "sandbox_test"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "AUTHENTICATION_FAILED",
+        "description": "API authentication failed (invalid or expired SECRET_KEY)",
+        "recovery_action": "Verify SECRET_KEY from Dashboard Settings page is correct and active"
+      },
+      "confidence_score": 0.95,
+      "source": "sandbox_test"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "RATE_LIMIT_EXCEEDED",
+        "description": "Too many requests in time window",
+        "recovery_action": "Implement exponential backoff and retry after Retry-After header value"
+      },
+      "confidence_score": 0.8,
+      "source": "official_docs",
+      "verify_marker": "// VERIFY: Too many requests in time window (confidence: 0.8, source: official_docs, check: Verify this errors fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "3DS_AUTHENTICATION_FAILED",
+        "description": "3D Secure authentication was rejected or timed out",
+        "recovery_action": "Payment cannot proceed; inform customer and offer alternative"
+      },
+      "confidence_score": 0.72,
+      "source": "community_report",
+      "verify_marker": "// VERIFY: 3D Secure authentication was rejected or timed out (confidence: 0.72, source: community_report, check: Verify this errors fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "CAPTURE_AMOUNT_EXCEEDED",
+        "description": "Capture amount exceeds authorized amount",
+        "recovery_action": "Reduce capture amount to match or be less than authorization"
+      },
+      "confidence_score": 0.85,
+      "source": "official_docs",
+      "verify_marker": "// VERIFY: Capture amount exceeds authorized amount (confidence: 0.85, source: official_docs, check: Verify this errors fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "VOID_NOT_ALLOWED",
+        "description": "Payment cannot be voided in current state",
+        "recovery_action": "Check payment status - only authorized (uncaptured) payments can be voided"
+      },
+      "confidence_score": 0.88,
+      "source": "official_docs",
+      "verify_marker": "// VERIFY: Payment cannot be voided in current state (confidence: 0.88, source: official_docs, check: Verify this errors fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "errors",
+      "value": {
+        "code": "ZAR_ACCOUNT_VALIDATION_UNAVAILABLE",
+        "description": "Account name validation not available for ZAR transfers",
+        "recovery_action": "Manually verify recipient details before sending ZAR transfers. accountName is required."
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "flows",
+      "value": {
+        "name": "ZAR Bank Transfer Offramp",
+        "steps": [
+          "Initiated",
+          "Pending",
+          "Processing",
+          "Successful"
+        ],
+        "description": "Offramp flow: crypto/digital → ZAR bank transfer. Requires bankCode, accountNumber, accountName. No account validation available for ZAR."
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "flows",
+      "value": {
+        "name": "Mobile Money Offramp",
+        "steps": [
+          "Initiated",
+          "Pending",
+          "Processing",
+          "Successful"
+        ],
+        "description": "Offramp via mobile money (GHS, KES, UGX, RWF, TZS, XOF, ZMW). Requires MNO and msisdn."
+      },
+      "confidence_score": 0.95,
+      "source": "official_docs"
+    },
+    {
+      "category": "flows",
+      "value": {
+        "name": "Transfer Reversal",
+        "steps": [
+          "Initiated",
+          "Pending",
+          "Processing",
+          "Reversed"
+        ],
+        "description": "Bank/operator reverses transfer. Funds auto-refunded to merchant wallet."
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "flows",
+      "value": {
+        "name": "Transfer Failure",
+        "steps": [
+          "Initiated",
+          "Pending",
+          "Failed"
+        ],
+        "description": "Transfer fails at processing stage. Check error reason."
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "flows",
+      "value": {
+        "name": "Standard Authorization and Capture",
+        "steps": [
+          "Created",
+          "Authorized",
+          "Captured"
+        ],
+        "description": "Two-step payment flow - authorize then capture funds separately"
+      },
+      "confidence_score": 0.95,
+      "source": "sandbox_test"
+    },
+    {
+      "category": "flows",
+      "value": {
+        "name": "Direct Capture",
+        "steps": [
+          "Created",
+          "Captured"
+        ],
+        "description": "Single-step payment where authorization and capture happen atomically"
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "flows",
+      "value": {
+        "name": "Authorization and Void",
+        "steps": [
+          "Created",
+          "Authorized",
+          "Voided"
+        ],
+        "description": "Cancel an authorized payment before capture"
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "flows",
+      "value": {
+        "name": "Capture and Refund",
+        "steps": [
+          "Created",
+          "Authorized",
+          "Captured",
+          "Refunded"
+        ],
+        "description": "Full payment lifecycle with refund"
+      },
+      "confidence_score": 0.92,
+      "source": "sandbox_test"
+    },
+    {
+      "category": "flows",
+      "value": {
+        "name": "3D Secure Authentication Flow",
+        "steps": [
+          "Created",
+          "Pending3ds",
+          "Authorized",
+          "Captured"
+        ],
+        "description": "Payment requiring 3DS customer verification before authorization"
+      },
+      "confidence_score": 0.75,
+      "source": "community_report",
+      "verify_marker": "// VERIFY: Payment requiring 3DS customer verification before authorization (confidence: 0.75, source: community_report, check: Verify this flows fact against provider documentation or sandbox)"
+    },
+    {
+      "category": "flows",
+      "value": {
+        "name": "Recurring Charge Flow",
+        "steps": [
+          "Collection Completed",
+          "Store authorizationCode",
+          "Re-charge via /transaction/recurrent"
+        ],
+        "description": "First charge via collection → store authorizationCode → subsequent charges via recurrent endpoint. Webhook includes isRecurrent: true."
+      },
+      "confidence_score": 0.9,
+      "source": "official_docs"
+    },
+    {
+      "category": "flows",
+      "value": {
+        "name": "Authorization Timeout",
+        "steps": [
+          "Created",
+          "Authorized",
+          "Expired"
+        ],
+        "description": "Authorized payment that times out without capture (timeout period unclear from docs)"
+      },
+      "confidence_score": 0.7,
+      "source": "inferred",
+      "verify_marker": "// VERIFY: Authorized payment that times out without capture (timeout period unclear from docs) (confidence: 0.7, source: inferred, check: Verify this flows fact against provider documentation or sandbox)"
+    }
+  ]
+}

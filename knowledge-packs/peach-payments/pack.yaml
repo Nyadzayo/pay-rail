@@ -2,9 +2,11 @@ metadata:
   name: peach_payments
   display_name: Peach Payments
   version: 1.0.0
-  base_url: https://oppwa.com/v1
-  sandbox_url: https://test.oppwa.com/v1
-  documentation_url: https://peachpayments.docs.oppwa.com
+  base_url: https://api-v2.peachpayments.com
+  sandbox_url: https://testapi-v2.peachpayments.com
+  documentation_url: https://developer.peachpayments.com
+  checkout_url: https://secure.peachpayments.com
+  checkout_sandbox_url: https://testsecure.peachpayments.com
 
 endpoints:
   - value:
@@ -203,6 +205,386 @@ status_codes:
     confidence_score: 0.90
     source: official_docs
     verification_date: "2026-03-06T00:00:00Z"
+    decay_rate: 0.05
+
+  # --- Success / Pending codes ---
+  - value:
+      provider_code: "000.000.100"
+      canonical_state: captured
+      description: Successful request
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "000.200.000"
+      canonical_state: authorized
+      description: Transaction pending (async flow — awaiting customer action or PSP)
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "000.200.100"
+      canonical_state: authorized
+      description: Successfully created checkout
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "000.300.000"
+      canonical_state: captured
+      description: Two-step transaction succeeded (capture after pre-auth)
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "000.400.000"
+      canonical_state: authorized
+      description: Transaction succeeded but flagged for fraud review
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "000.400.110"
+      canonical_state: authorized
+      description: Authentication successful (frictionless 3DS flow)
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "000.600.000"
+      canonical_state: captured
+      description: Transaction succeeded via external update
+    confidence_score: 0.88
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  # --- Soft decline / 3DS ---
+  - value:
+      provider_code: "300.100.100"
+      canonical_state: pending_3ds
+      description: Soft decline — additional customer authentication required (SCA)
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "000.200.001"
+      canonical_state: authorized
+      description: Transaction pending for acquirer, consumer not present
+    confidence_score: 0.88
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  # --- Waiting / delayed ---
+  - value:
+      provider_code: "800.400.500"
+      canonical_state: authorized
+      description: Waiting for confirmation of non-instant payment
+    confidence_score: 0.88
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.400.501"
+      canonical_state: authorized
+      description: Waiting for confirmation of non-instant debit
+    confidence_score: 0.88
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.400.502"
+      canonical_state: authorized
+      description: Waiting for confirmation of non-instant refund
+    confidence_score: 0.88
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  # --- Bank / card decline codes ---
+  - value:
+      provider_code: "800.100.100"
+      canonical_state: failed
+      description: Transaction declined for unknown reason
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.100.153"
+      canonical_state: failed
+      description: Transaction declined — invalid CVV
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.100.157"
+      canonical_state: failed
+      description: Transaction declined — wrong expiry date
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.100.158"
+      canonical_state: failed
+      description: Transaction declined — suspecting manipulation
+    confidence_score: 0.93
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.100.159"
+      canonical_state: failed
+      description: Transaction declined — stolen card
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.100.160"
+      canonical_state: failed
+      description: Transaction declined — card blocked
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.100.171"
+      canonical_state: failed
+      description: Transaction declined — pick up card
+    confidence_score: 0.93
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  # --- 3DS failures ---
+  - value:
+      provider_code: "100.390.100"
+      canonical_state: failed
+      description: 3D Secure transaction rejected
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "100.390.105"
+      canonical_state: failed
+      description: Technical error in 3DSecure system
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  # --- User cancellation / timeout ---
+  - value:
+      provider_code: "100.396.101"
+      canonical_state: failed
+      description: Cancelled by user
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "100.396.103"
+      canonical_state: expired
+      description: Previously pending transaction timed out
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "100.396.104"
+      canonical_state: failed
+      description: Uncertain status — probably cancelled by user
+    confidence_score: 0.88
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  # --- Communication / timeout errors ---
+  - value:
+      provider_code: "900.100.100"
+      canonical_state: failed
+      description: Unexpected communication error with connector/acquirer
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "900.100.300"
+      canonical_state: expired
+      description: Timeout with uncertain result
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "900.100.301"
+      canonical_state: voided
+      description: Transaction timed out and was reversed
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "900.100.400"
+      canonical_state: expired
+      description: Timeout at connector/acquirer side
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "900.100.600"
+      canonical_state: failed
+      description: Connector/acquirer currently down
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  # --- Risk / duplicate / blacklist ---
+  - value:
+      provider_code: "800.110.100"
+      canonical_state: failed
+      description: Duplicate transaction
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.120.100"
+      canonical_state: failed
+      description: Rejected by throttling
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.200.159"
+      canonical_state: failed
+      description: Account/user blacklisted — card stolen
+    confidence_score: 0.93
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "800.200.160"
+      canonical_state: failed
+      description: Account/user blacklisted — card blocked
+    confidence_score: 0.93
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  # --- Validation errors ---
+  - value:
+      provider_code: "100.100.101"
+      canonical_state: failed
+      description: Invalid credit card number
+    confidence_score: 0.95
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "100.100.303"
+      canonical_state: failed
+      description: Expired card
+    confidence_score: 0.93
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "100.100.600"
+      canonical_state: failed
+      description: Empty CVV for CVV-required transaction
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  # --- Reference / workflow errors ---
+  - value:
+      provider_code: "700.100.100"
+      canonical_state: failed
+      description: Referenced transaction does not exist
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "700.400.200"
+      canonical_state: failed
+      description: Cannot capture — invalid referenced transaction
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "700.400.530"
+      canonical_state: failed
+      description: Refund amount exceeds original transaction amount
+    confidence_score: 0.92
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  # --- System errors ---
+  - value:
+      provider_code: "800.800.800"
+      canonical_state: failed
+      description: Payment system unavailable
+    confidence_score: 0.90
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
+    decay_rate: 0.05
+
+  - value:
+      provider_code: "999.999.999"
+      canonical_state: failed
+      description: Undefined connector/acquirer error
+    confidence_score: 0.85
+    source: official_docs
+    verification_date: "2026-03-09T00:00:00Z"
     decay_rate: 0.05
 
 errors:

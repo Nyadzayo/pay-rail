@@ -1,0 +1,11 @@
+{
+  "version": "startbutton@2026-03-10",
+  "token_count": 6511,
+  "coverage_pct": 71,
+  "confidence_summary": {
+    "generate": 45,
+    "verify": 18,
+    "refuse_excluded": 0
+  },
+  "compiled_at": "2026-03-10T09:29:34.254Z"
+}
