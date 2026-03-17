@@ -90,6 +90,12 @@ pub mod idempotency;
 /// by the Rust compiler. See [`Payment`] for the main entry point.
 pub mod payment;
 
+/// Continuous reconciliation engine for comparing optimistic vs provider-confirmed state.
+///
+/// Detects discrepancies between app-facing and provider-confirmed payment states,
+/// categorizes them, and drives settlement transitions.
+pub mod reconciliation;
+
 /// Commonly-used types for PayRail payment processing.
 ///
 /// Import with `use payrail_core::prelude::*` for convenient access
@@ -118,8 +124,15 @@ pub use knowledge::{
 };
 pub use payment::{
     Authorized, Captured, Created, Currency, Failed, Money, Payment, PaymentCommand, PaymentIntent,
-    PaymentState, PaymentStateMarker, Pending3DS, Refunded, TimedOut, TimeoutConfig,
+    PaymentState, PaymentStateMarker, Pending3DS, Refunded, Settled, TimedOut, TimeoutConfig,
     TimeoutEnforceable, TransitionError, TransitionResult, Voided,
+};
+pub use reconciliation::{
+    Discrepancy, DiscrepancyBreakdown, DiscrepancyCategory, DiscrepancySeverity, Escalation,
+    EscalationError, EscalationSink, InMemoryEscalationSink, LogEscalationSink,
+    LoopIterationResult, PaymentIdSource, ReconciliationConfig, ReconciliationCycleError,
+    ReconciliationCycleResult, ReconciliationEngine, ReconciliationLoop, ReconciliationReport,
+    ReconciliationResult, ReconciliationStatus, Resolution, ResolutionSummary, ResolutionType,
 };
 pub use webhook::{
     EnvSecretStore, ReceiverError, SecretStore, SignatureConfig, SignatureError, SignatureMethod,

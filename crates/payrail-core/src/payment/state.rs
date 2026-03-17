@@ -42,6 +42,10 @@ pub struct Failed;
 #[derive(Debug, Clone)]
 pub struct TimedOut;
 
+/// Payment has been settled after reconciliation confirms provider settlement (terminal).
+#[derive(Debug, Clone)]
+pub struct Settled;
+
 // Sealed trait implementations
 impl sealed::Sealed for Created {}
 impl sealed::Sealed for Pending3DS {}
@@ -51,6 +55,7 @@ impl sealed::Sealed for Refunded {}
 impl sealed::Sealed for Voided {}
 impl sealed::Sealed for Failed {}
 impl sealed::Sealed for TimedOut {}
+impl sealed::Sealed for Settled {}
 
 // PaymentStateMarker implementations
 impl PaymentStateMarker for Created {
@@ -101,6 +106,12 @@ impl PaymentStateMarker for TimedOut {
     }
 }
 
+impl PaymentStateMarker for Settled {
+    fn runtime_state() -> PaymentState {
+        PaymentState::Settled
+    }
+}
+
 /// Marker trait for states that support automatic timeout enforcement.
 /// Implemented for all non-terminal states that can auto-transition to TimedOut.
 pub trait TimeoutEnforceable: PaymentStateMarker {}
@@ -124,6 +135,7 @@ mod tests {
         assert_eq!(std::mem::size_of::<Voided>(), 0);
         assert_eq!(std::mem::size_of::<Failed>(), 0);
         assert_eq!(std::mem::size_of::<TimedOut>(), 0);
+        assert_eq!(std::mem::size_of::<Settled>(), 0);
     }
 
     #[test]
@@ -138,6 +150,7 @@ mod tests {
         assert_marker::<Voided>();
         assert_marker::<Failed>();
         assert_marker::<TimedOut>();
+        assert_marker::<Settled>();
     }
 
     #[test]
@@ -151,10 +164,11 @@ mod tests {
         assert_debug_clone::<Voided>();
         assert_debug_clone::<Failed>();
         assert_debug_clone::<TimedOut>();
+        assert_debug_clone::<Settled>();
     }
 
     #[test]
-    fn exactly_eight_states_exist() {
+    fn exactly_nine_states_exist() {
         // Verify runtime_state() returns the correct variant for each
         let states = [
             Created::runtime_state(),
@@ -165,8 +179,9 @@ mod tests {
             Voided::runtime_state(),
             Failed::runtime_state(),
             TimedOut::runtime_state(),
+            Settled::runtime_state(),
         ];
-        assert_eq!(states.len(), 8);
+        assert_eq!(states.len(), 9);
         // All unique
         for (i, a) in states.iter().enumerate() {
             for (j, b) in states.iter().enumerate() {
@@ -187,6 +202,7 @@ mod tests {
         assert_eq!(Voided::runtime_state(), PaymentState::Voided);
         assert_eq!(Failed::runtime_state(), PaymentState::Failed);
         assert_eq!(TimedOut::runtime_state(), PaymentState::TimedOut);
+        assert_eq!(Settled::runtime_state(), PaymentState::Settled);
     }
 
     #[test]
@@ -199,5 +215,6 @@ mod tests {
         assert_eq!(std::mem::align_of::<Voided>(), 1);
         assert_eq!(std::mem::align_of::<Failed>(), 1);
         assert_eq!(std::mem::align_of::<TimedOut>(), 1);
+        assert_eq!(std::mem::align_of::<Settled>(), 1);
     }
 }

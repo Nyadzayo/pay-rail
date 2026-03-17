@@ -181,6 +181,9 @@ pub enum PaymentState {
     /// Payment timed out.
     #[serde(rename = "TimedOut")]
     TimedOut,
+    /// Payment settled after reconciliation (terminal).
+    #[serde(rename = "Settled")]
+    Settled,
 }
 
 impl fmt::Display for PaymentState {
@@ -194,6 +197,7 @@ impl fmt::Display for PaymentState {
             PaymentState::Voided => write!(f, "Voided"),
             PaymentState::Failed => write!(f, "Failed"),
             PaymentState::TimedOut => write!(f, "TimedOut"),
+            PaymentState::Settled => write!(f, "Settled"),
         }
     }
 }

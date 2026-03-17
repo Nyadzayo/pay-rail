@@ -34,8 +34,8 @@ pub(crate) mod types;
 
 pub use machine::{Payment, TransitionError, TransitionResult};
 pub use state::{
-    Authorized, Captured, Created, Failed, PaymentStateMarker, Pending3DS, Refunded, TimedOut,
-    TimeoutEnforceable, Voided,
+    Authorized, Captured, Created, Failed, PaymentStateMarker, Pending3DS, Refunded, Settled,
+    TimedOut, TimeoutEnforceable, Voided,
 };
 pub use timeout::TimeoutConfig;
 pub use types::{Currency, Money, PaymentCommand, PaymentIntent, PaymentState};

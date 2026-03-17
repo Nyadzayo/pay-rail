@@ -498,11 +498,13 @@ fn valid_transitions_for(state: &PaymentState) -> &'static [PaymentState] {
         ],
         PaymentState::Captured => &[
             PaymentState::Refunded,
+            PaymentState::Settled,
             PaymentState::Failed,
             PaymentState::TimedOut,
         ],
+        PaymentState::Refunded => &[PaymentState::Settled],
         PaymentState::TimedOut => &[PaymentState::Failed],
-        PaymentState::Refunded | PaymentState::Voided | PaymentState::Failed => &[],
+        PaymentState::Voided | PaymentState::Failed | PaymentState::Settled => &[],
     }
 }
 
@@ -585,6 +587,12 @@ impl Payment<Captured> {
         transition(self, now)
     }
 
+    /// Settles a captured payment after reconciliation confirms provider settlement.
+    /// Consumes the payment.
+    pub fn settle(self, now: DateTime<Utc>) -> Payment<Settled> {
+        transition(self, now)
+    }
+
     /// Transitions to `Failed` (terminal). Consumes the payment.
     pub fn fail(self, now: DateTime<Utc>) -> Payment<Failed> {
         transition(self, now)
@@ -600,7 +608,17 @@ impl Payment<TimedOut> {
     }
 }
 
-// Terminal states: Refunded, Voided, Failed — no transition methods
+// -- Refunded transitions --
+
+impl Payment<Refunded> {
+    /// Settles a refunded payment after reconciliation confirms refund settlement.
+    /// Consumes the payment.
+    pub fn settle(self, now: DateTime<Utc>) -> Payment<Settled> {
+        transition(self, now)
+    }
+}
+
+// Terminal states: Settled, Voided, Failed — no transition methods
 
 #[cfg(test)]
 mod tests {
@@ -1299,16 +1317,17 @@ mod tests {
     }
 
     #[test]
-    fn invalid_transition_terminal_refunded_to_anything() {
+    fn invalid_transition_terminal_refunded_rejects_non_settled() {
         let now = fixed_time();
         let refunded = Payment::<Created>::create(test_intent(), now)
             .authorize(now)
             .capture(now)
             .refund(now);
+        // Refunded can only transition to Settled
         match refunded.try_transition(PaymentState::Failed, now) {
             TransitionResult::Rejected { error, .. } => {
                 assert_eq!(error.current_state, PaymentState::Refunded);
-                assert!(error.valid_transitions.is_empty());
+                assert_eq!(error.valid_transitions, &[PaymentState::Settled]);
             }
             _ => panic!("expected Rejected"),
         }
@@ -1386,8 +1405,9 @@ mod tests {
             .authorize(now)
             .capture(now);
         let valid = captured.valid_transitions();
-        assert_eq!(valid.len(), 3);
+        assert_eq!(valid.len(), 4);
         assert!(valid.contains(&PaymentState::Refunded));
+        assert!(valid.contains(&PaymentState::Settled));
         assert!(valid.contains(&PaymentState::Failed));
         assert!(valid.contains(&PaymentState::TimedOut));
     }
@@ -1404,11 +1424,12 @@ mod tests {
     fn valid_transitions_terminal_states_empty() {
         let now = fixed_time();
 
+        // Refunded can transition to Settled only
         let refunded = Payment::<Created>::create(test_intent(), now)
             .authorize(now)
             .capture(now)
             .refund(now);
-        assert!(refunded.valid_transitions().is_empty());
+        assert_eq!(refunded.valid_transitions(), &[PaymentState::Settled]);
 
         let voided = Payment::<Created>::create(test_intent(), now)
             .authorize(now)
@@ -1417,6 +1438,13 @@ mod tests {
 
         let failed = Payment::<Created>::create(test_intent(), now).fail(now);
         assert!(failed.valid_transitions().is_empty());
+
+        // Settled is terminal — no outgoing transitions
+        let settled = Payment::<Created>::create(test_intent(), now)
+            .authorize(now)
+            .capture(now)
+            .settle(now);
+        assert!(settled.valid_transitions().is_empty());
     }
 
     // ========== Try-transition: valid transitions ==========
@@ -2014,5 +2042,136 @@ mod tests {
             id_str,
             display
         );
+    }
+
+    // ========== Story 9.1: Settled state transitions ==========
+
+    #[test]
+    fn captured_settle_returns_settled() {
+        let now = fixed_time();
+        let settled = Payment::<Created>::create(test_intent(), now)
+            .authorize(now)
+            .capture(now)
+            .settle(now);
+        assert_eq!(settled.state(), PaymentState::Settled);
+    }
+
+    #[test]
+    fn refunded_settle_returns_settled() {
+        let now = fixed_time();
+        let settled = Payment::<Created>::create(test_intent(), now)
+            .authorize(now)
+            .capture(now)
+            .refund(now)
+            .settle(now);
+        assert_eq!(settled.state(), PaymentState::Settled);
+    }
+
+    #[test]
+    fn settled_is_terminal_no_transitions() {
+        let now = fixed_time();
+        let settled = Payment::<Created>::create(test_intent(), now)
+            .authorize(now)
+            .capture(now)
+            .settle(now);
+        assert!(settled.valid_transitions().is_empty());
+    }
+
+    #[test]
+    fn settled_preserves_payment_fields() {
+        let now = fixed_time();
+        let t1 = later(now, 10);
+        let intent = test_intent();
+        let expected_id = intent.id.clone();
+        let settled = Payment::<Created>::create(intent, now)
+            .authorize(now)
+            .capture(now)
+            .settle(t1);
+        assert_eq!(settled.id, expected_id);
+        assert_eq!(settled.created_at, now);
+        assert_eq!(settled.last_transition_at, t1);
+    }
+
+    #[test]
+    fn try_transition_captured_to_settled() {
+        let t0 = fixed_time();
+        let t1 = later(t0, 10);
+        let captured = Payment::<Created>::create(test_intent(), now())
+            .authorize(now())
+            .capture(now());
+        match captured.try_transition(PaymentState::Settled, t1) {
+            TransitionResult::Applied { new_state, .. } => {
+                assert_eq!(new_state, PaymentState::Settled);
+            }
+            _ => panic!("expected Applied"),
+        }
+    }
+
+    #[test]
+    fn try_transition_refunded_to_settled() {
+        let refunded = Payment::<Created>::create(test_intent(), now())
+            .authorize(now())
+            .capture(now())
+            .refund(now());
+        match refunded.try_transition(PaymentState::Settled, now()) {
+            TransitionResult::Applied { new_state, .. } => {
+                assert_eq!(new_state, PaymentState::Settled);
+            }
+            _ => panic!("expected Applied"),
+        }
+    }
+
+    #[test]
+    fn try_transition_created_to_settled_rejected() {
+        let created = Payment::<Created>::create(test_intent(), now());
+        match created.try_transition(PaymentState::Settled, now()) {
+            TransitionResult::Rejected { error, .. } => {
+                assert_eq!(error.current_state, PaymentState::Created);
+                assert_eq!(error.attempted, PaymentState::Settled);
+            }
+            _ => panic!("expected Rejected"),
+        }
+    }
+
+    #[test]
+    fn try_transition_failed_to_settled_rejected() {
+        let failed = Payment::<Created>::create(test_intent(), now()).fail(now());
+        match failed.try_transition(PaymentState::Settled, now()) {
+            TransitionResult::Rejected { error, .. } => {
+                assert_eq!(error.current_state, PaymentState::Failed);
+                assert_eq!(error.attempted, PaymentState::Settled);
+            }
+            _ => panic!("expected Rejected"),
+        }
+    }
+
+    #[test]
+    fn try_transition_settled_self_transition() {
+        let settled = Payment::<Created>::create(test_intent(), now())
+            .authorize(now())
+            .capture(now())
+            .settle(now());
+        match settled.try_transition(PaymentState::Settled, now()) {
+            TransitionResult::SelfTransition(p) => {
+                assert_eq!(p.state(), PaymentState::Settled);
+            }
+            _ => panic!("expected SelfTransition"),
+        }
+    }
+
+    #[test]
+    fn settled_has_no_timeout() {
+        let now = fixed_time();
+        let config = TimeoutConfig::default();
+        let settled = Payment::<Created>::create(test_intent(), now)
+            .authorize(now)
+            .capture(now)
+            .settle(now);
+        assert!(!settled.is_timed_out(&config, later(now, 999_999)));
+        assert!(settled.timeout_deadline(&config).is_none());
+    }
+
+    fn now() -> DateTime<Utc> {
+        fixed_time()
     }
 }

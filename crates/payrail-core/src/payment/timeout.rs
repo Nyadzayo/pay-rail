@@ -54,7 +54,8 @@ impl TimeoutConfig {
             PaymentState::Refunded
             | PaymentState::Voided
             | PaymentState::Failed
-            | PaymentState::TimedOut => None,
+            | PaymentState::TimedOut
+            | PaymentState::Settled => None,
         }
     }
 

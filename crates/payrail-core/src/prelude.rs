@@ -22,7 +22,8 @@
 pub use crate::id::PaymentId;
 pub use crate::payment::{
     Authorized, Captured, Created, Currency, Failed, Money, Payment, PaymentIntent, PaymentState,
-    Pending3DS, Refunded, TimedOut, TimeoutConfig, TransitionError, TransitionResult, Voided,
+    Pending3DS, Refunded, Settled, TimedOut, TimeoutConfig, TransitionError, TransitionResult,
+    Voided,
 };
 
 #[cfg(test)]
@@ -40,6 +41,7 @@ mod tests {
         assert_type::<Payment<Voided>>();
         assert_type::<Payment<Failed>>();
         assert_type::<Payment<TimedOut>>();
+        assert_type::<Payment<Settled>>();
     }
 
     #[test]

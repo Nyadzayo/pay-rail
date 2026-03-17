@@ -1,18 +1,18 @@
 /**
  * Canonical payment state machine reference.
- * 8 states with defined valid transitions.
+ * 9 states with defined valid transitions.
  * Source: payrail-core state.rs + architecture.md
  */
 
 export const CANONICAL_STATES = [
   "Created", "Authorized", "Captured", "Refunded",
-  "Voided", "Failed", "Expired", "Pending3ds",
+  "Voided", "Failed", "Expired", "Pending3ds", "Settled",
 ] as const;
 
 export type CanonicalState = (typeof CANONICAL_STATES)[number];
 
 export const TERMINAL_STATES: ReadonlySet<CanonicalState> = new Set([
-  "Refunded", "Voided", "Failed", "Expired",
+  "Refunded", "Voided", "Failed", "Expired", "Settled",
 ]);
 
 /** Valid transitions: [from, to] pairs */
@@ -29,7 +29,9 @@ export const VALID_TRANSITIONS: ReadonlyArray<[CanonicalState, CanonicalState]> 
   ["Authorized", "Failed"],
   ["Authorized", "Expired"],
   ["Captured", "Refunded"],
+  ["Captured", "Settled"],
   ["Captured", "Failed"],
+  ["Refunded", "Settled"],
 ];
 
 /** States that should handle self-transitions (duplicate events) */
