@@ -4,6 +4,7 @@ members = [
     "crates/payrail-adapters",
     "crates/payrail-cli",
     "crates/payrail-mcp",
+    "crates/payrail-output",
 ]
 resolver = "2"
 
@@ -25,9 +26,16 @@ sha2 = "0.10"
 subtle = "2"
 hex = "0.4"
 serde_yaml = "0.9"
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+owo-colors = "4"
+indicatif = "0.17"
+clap_complete = "4"
+
+serial_test = "3"
 
 # Internal crates
 payrail-core = { path = "crates/payrail-core" }
 payrail-adapters = { path = "crates/payrail-adapters" }
+payrail-output = { path = "crates/payrail-output" }

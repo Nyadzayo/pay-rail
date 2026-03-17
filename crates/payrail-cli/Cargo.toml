@@ -3,13 +3,29 @@ name = "payrail-cli"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
-description = "PayRail CLI tool (Phase 2)"
+description = "PayRail CLI tool"
+
+[[bin]]
+name = "payrail"
+path = "src/main.rs"
 
 [dependencies]
 payrail-core.workspace = true
 payrail-adapters.workspace = true
+payrail-output.workspace = true
 clap.workspace = true
+clap_complete.workspace = true
+owo-colors.workspace = true
+indicatif.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 serde_yaml.workspace = true
+chrono.workspace = true
 
 [dev-dependencies]
 ulid.workspace = true
+assert_cmd = "2"
+predicates = "3"
+tempfile = "3"
+serde_json = { workspace = true }
+serial_test.workspace = true
