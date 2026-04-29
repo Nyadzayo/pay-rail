@@ -141,9 +141,9 @@ describe("analyzeStateMachine", () => {
         // Created -> Pending3ds
       `;
       const result = analyzeStateMachine({ code });
-      const refundedIssue = result.issues.find((i) => i.description.includes('"Refunded"'));
-      expect(refundedIssue).toBeDefined();
-      expect(refundedIssue!.severity).toBe("warning");
+      const voidedIssue = result.issues.find((i) => i.description.includes('"Voided"'));
+      expect(voidedIssue).toBeDefined();
+      expect(voidedIssue!.severity).toBe("warning");
     });
 
     it("assigns info severity to missing self-transition handling", () => {

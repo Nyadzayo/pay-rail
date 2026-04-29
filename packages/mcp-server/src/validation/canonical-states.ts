@@ -12,7 +12,7 @@ export const CANONICAL_STATES = [
 export type CanonicalState = (typeof CANONICAL_STATES)[number];
 
 export const TERMINAL_STATES: ReadonlySet<CanonicalState> = new Set([
-  "Refunded", "Voided", "Failed", "Expired", "Settled",
+  "Voided", "Failed", "Expired", "Settled",
 ]);
 
 /** Valid transitions: [from, to] pairs */
