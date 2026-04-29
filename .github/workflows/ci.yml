@@ -75,5 +75,8 @@ jobs:
       - name: Build packages
         run: pnpm build
 
+      - name: Compile knowledge packs
+        run: pnpm --filter @payrail/mcp-server compile:packs
+
       - name: Run tests
         run: pnpm test
