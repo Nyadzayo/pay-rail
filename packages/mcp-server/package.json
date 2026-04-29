@@ -20,7 +20,8 @@
     "build": "tsup",
     "test": "vitest run --passWithNoTests",
     "lint": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "compile:packs": "node dist/cli/compile.js peach-payments --pack ../../knowledge-packs/peach-payments/pack.yaml && node dist/cli/compile.js startbutton --pack ../../knowledge-packs/startbutton/pack.yaml"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.27.1",

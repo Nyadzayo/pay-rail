@@ -9,8 +9,8 @@ import {
 } from "../canonical-states.js";
 
 describe("canonical-states", () => {
-  it("defines exactly 8 canonical states", () => {
-    expect(CANONICAL_STATES).toHaveLength(8);
+  it("defines exactly 9 canonical states", () => {
+    expect(CANONICAL_STATES).toHaveLength(9);
   });
 
   it("includes all required states", () => {
@@ -22,14 +22,15 @@ describe("canonical-states", () => {
     expect(CANONICAL_STATES).toContain("Failed");
     expect(CANONICAL_STATES).toContain("Expired");
     expect(CANONICAL_STATES).toContain("Pending3ds");
+    expect(CANONICAL_STATES).toContain("Settled");
   });
 
   it("defines 4 terminal states", () => {
     expect(TERMINAL_STATES.size).toBe(4);
-    expect(TERMINAL_STATES.has("Refunded")).toBe(true);
     expect(TERMINAL_STATES.has("Voided")).toBe(true);
     expect(TERMINAL_STATES.has("Failed")).toBe(true);
     expect(TERMINAL_STATES.has("Expired")).toBe(true);
+    expect(TERMINAL_STATES.has("Settled")).toBe(true);
   });
 
   it("terminal states have no valid outgoing transitions", () => {
@@ -57,7 +58,7 @@ describe("canonical-states", () => {
     expect(SELF_TRANSITION_STATES).toHaveLength(5);
   });
 
-  it("VALID_TRANSITIONS has 13 entries", () => {
-    expect(VALID_TRANSITIONS.length).toBe(13);
+  it("VALID_TRANSITIONS has 15 entries", () => {
+    expect(VALID_TRANSITIONS.length).toBe(15);
   });
 });
